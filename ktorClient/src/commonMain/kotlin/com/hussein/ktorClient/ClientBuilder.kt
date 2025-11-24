@@ -19,7 +19,7 @@ fun defaultJsonHttpClient(
     baseUrl: String,
     isLoggingEnabled: Boolean,
     accessToken: String? = null,
-    block: HttpClientConfig<*>.() -> Unit,
+    block: HttpClientConfig<*>.() -> Unit = {},
 ) = HttpClient(CIO) {
     // This will throw exception if response status is not successful (>= 3xx)
     expectSuccess = true

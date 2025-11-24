@@ -1,147 +1,109 @@
-# KMP-MQTT
+# KMP Ktor Client Library
 
-A library for MQTT easy plug and play usage, based on ktor-mqtt library. This library provides a simple, Kotlin Multiplatform-ready client for interacting with MQTT brokers.
+This library provides a simplified and structured way to interact with REST APIs in your Kotlin Multiplatform projects, built on top of Ktor. It offers a type-safe approach to defining API endpoints and streamlines making HTTP requests.
 
-## Installation
+## Features
 
-Add the dependency to your `build.gradle.kts` file:
+-   **Type-Safe API Endpoints**: Define your API endpoints as typed resources.
+-   **Simplified HTTP Requests**: Abstract away the boilerplate of making `get`, `post`, `put` and form requests.
+-   **Pre-configured Ktor Client**: Includes a factory function to create a sensible default `HttpClient`.
+-   **Typed Responses**: Get back a `HttpTypedResponse` that includes the deserialized body.
 
-```kotlin
-implementation("io.github.hussein-al-zuhile:kmp-mqtt:1.0.1")
-```
+## Getting Started
 
-## Usage
+### 1. Add the Dependency
 
-### 1. Create your MQTT Client
+_(Note: You will need to fill in the correct dependency information once the library is published.)_
 
-First, you need to create a class that inherits from `BaseMQTTClient`.
+### 2. Define API Resources
 
-```kotlin
-import com.hussein.mqtt.BaseMQTTClient
+Create a class for each resource root. Inside, define your specific endpoints as `data class` or `object` properties that implement `ApiResource<ResponseBody>`.
 
-class MyMQTTClient(
-    ip: String,
-    port: Int,
-    clientIdentifier: String = "my-unique-client-id"
-) : BaseMQTTClient(ip, port, clientIdentifier) {
-    // You can add custom logic here if needed
-}
-```
-
-### 2. Define Topics and Message Models
-
-Define your topics and the data models for the messages. The library uses Kotlinx Serialization for JSON conversion.
+For requests with a body, use the `ApiResourceWithRequest<RequestBody, ResponseBody>` interface.
 
 ```kotlin
-import com.hussein.mqtt.MQTTTopic
+import com.hussein.ktorClient.ApiResource
+import com.hussein.ktorClient.ApiResourceParent
+import com.hussein.ktorClient.ApiResourceWithRequest
+import io.ktor.resources.Resource
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class MyMessage(val content: String)
+@Resource("/users")
+class UserResource : ApiResourceParent {
+    @Resource("all")
+    data class All(val active: Boolean) : ApiResource<List<User>>
 
-val myTopic = MQTTTopic<MyMessage>("my/awesome/topic")
-```
+    @Resource("{id}")
+    data class ById(val parent: UserResource = UserResource(), val id: Long) : ApiResource<User>
 
-### 3. Connect to the Broker
-
-Instantiate your client and connect to the MQTT broker.
-
-```kotlin
-val client = MyMQTTClient("broker.emqx.io", 1883)
-
-// To connect once
-val connectionResult = client.connect()
-
-// Or, to automatically handle reconnects
-client.connectOrTryReconnect()
-```
-
-### 4. Subscribe and Listen to Topics
-
-You can easily subscribe to a topic and get a `Flow` of messages. The library will handle JSON decoding for you.
-
-```kotlin
-import com.hussein.mqtt.utils.subscribeAndListenWhenConnected
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-
-// ... inside a CoroutineScope
-
-client.subscribeAndListenWhenConnected(myTopic)
-    .onEach { message: MyMessage ->
-        println("Received message: ${message.content}")
-    }
-    .launchIn(CoroutineScope(Dispatchers.Default))
-```
-
-### 5. Publish Messages
-
-Publishing a message is just as simple. The library handles the JSON encoding.
-
-```kotlin
-import de.kempmobil.ktor.mqtt.QoS
-
-// ... inside a suspend function or CoroutineScope
-
-val messageToSend = MyMessage(content = "Hello, MQTT!")
-
-client.publish(
-    topic = myTopic,
-    payload = messageToSend,
-    desiredQoS = QoS.AT_LEAST_ONCE
-)
-```
-
-### 6. Disconnect
-
-To disconnect from the broker:
-
-```kotlin
-client.disconnect()
-```
-
-### 7. Dynamic Configuration with `MqttConfigurationManager`
-
-If you need to dynamically change the MQTT broker's IP address or port, you can use `MqttConfigurationManager`. This is useful when the connection details are not known at compile time or can change during the application's lifecycle.
-
-First, create a class that inherits from `MqttConfigurationManager`:
-
-```kotlin
-import com.hussein.mqtt.MqttConfigurationManager
-import kotlinx.coroutines.flow.Flow
-
-class MyMqttConfigManager(
-    ipFlow: Flow<String>,
-    portFlow: Flow<Int>
-) : MqttConfigurationManager<MyMQTTClient>(
-    ipFlow = ipFlow,
-    portFlow = portFlow,
-    initiator = { ip, port -> MyMQTTClient(ip, port) }
-) 
-```
-
-Then, you can use it like this:
-
-```kotlin
-import kotlinx.coroutines.flow.MutableStateFlow
-
-// Create flows for your dynamic configuration
-val ipFlow = MutableStateFlow("broker.emqx.io")
-val portFlow = MutableStateFlow(1883)
-
-// Initialize the manager
-val configManager = MyMqttConfigManager(ipFlow, portFlow)
-
-// You can then collect the client and use it
-configManager.currentClientStateFlow.collect { client ->
-    if (client != null) {
-        // You can now use the client to subscribe, publish, etc.
-    }
+    @Resource("create")
+    data class Create(val parent: UserResource = UserResource(), override val requestBody: User) :
+        ApiResourceWithRequest<User, Unit>
 }
 
-// To change the configuration, just emit a new value to the flows
-ipFlow.value = "new.broker.address"
-portFlow.value = 8883
+@Serializable
+data class User(val id: Long, val name: String)
+```
+
+### 3. Create a Remote Service
+
+Create a class that inherits from `BaseRemoteService` and inject an `HttpClient`. This class will contain the functions that make the actual API calls.
+
+```kotlin
+import com.hussein.ktorClient.BaseRemoteService
+import io.ktor.client.HttpClient
+
+class UserRemoteService(client: HttpClient) : BaseRemoteService(client) {
+
+    suspend fun getUsers(active: Boolean) = get(
+        resource = UserResource.All(active = active)
+    )
+
+    suspend fun getUserById(id: Long) = get(
+        resource = UserResource.ById(id = id)
+    )
+
+    suspend fun createUser(user: User) = post(
+        resource = UserResource.Create(requestBody = user)
+    )
+}
+```
+
+### 4. Create the HttpClient
+
+Use the `defaultJsonHttpClient` function to create a pre-configured `HttpClient`. You can customize it further if needed.
+
+```kotlin
+import com.hussein.ktorClient.defaultJsonHttpClient
+
+val myClient = defaultJsonHttpClient(
+    baseUrl = "https://api.example.com",
+    isLoggingEnabled = true,
+    accessToken = "your-bearer-token"
+) {
+    // Extra Ktor configuration can be added here
+}
+```
+
+### 5. Make API Calls
+
+Now, you can instantiate your service and make API calls.
+
+```kotlin
+val userService = UserRemoteService(myClient)
+
+// Make a GET request
+val usersResponse = userService.getUsers(active = true)
+if (usersResponse.status.isSuccess()) {
+    val users: List<User> = usersResponse.body
+    println("Got users: $users")
+}
+
+// Make a POST request
+val newUser = User(id = 0, name = "John Doe")
+val createResponse = userService.createUser(newUser)
+if (createResponse.status.isSuccess()) {
+    println("User created successfully!")
+}
 ```

@@ -1,17 +1,18 @@
 package com.hussein.ktorClient
 
-import io.ktor.resources.Resource
 import kotlinx.serialization.Serializable
 
 
-@Serializable
-@Resource("")
-sealed interface ApiResource<ResponseBody>
+interface ApiResource<ResponseBody> {
+    val parent: ApiResourceParent?
+        get() = null
+}
 
-@Serializable
 interface ApiResourceWithRequest<RequestBody, ResponseBody> : ApiResource<ResponseBody> {
     val requestBody: RequestBody
 }
+
+// Helpers
 
 @Serializable
 data object UnitApiResource : ApiResource<Unit>
