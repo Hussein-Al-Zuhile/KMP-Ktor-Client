@@ -11,9 +11,13 @@ This library provides a simplified and structured way to interact with REST APIs
 
 ## Getting Started
 
-### 1. Add the Dependency
+Add the dependency to your module's `build.gradle.kts` file:
 
-_(Note: You will need to fill in the correct dependency information once the library is published.)_
+```groovy
+dependencies {
+    implementation("io.github.hussein-al-zuhile:kmp-ktor-client:1.0.0")
+}
+```
 
 ### 2. Define API Resources
 
