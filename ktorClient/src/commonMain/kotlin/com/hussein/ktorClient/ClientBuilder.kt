@@ -49,9 +49,8 @@ fun defaultJsonHttpClient(
                 isLenient = true
                 ignoreUnknownKeys = true
                 explicitNulls = false
-            },
-
-            )
+            }
+        )
     }
     block()
 }
