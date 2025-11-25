@@ -11,9 +11,12 @@ import io.ktor.client.plugins.resources.prepareRequest
 import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.forms.FormDataContent
 import io.ktor.client.request.forms.MultiPartFormDataContent
+import io.ktor.client.request.header
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.HttpStatement
+import io.ktor.http.ContentType
+import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
 import io.ktor.http.Parameters
 import io.ktor.http.content.PartData
@@ -21,8 +24,8 @@ import io.ktor.utils.io.InternalAPI
 
 abstract class BaseRemoteService(protected val client: HttpClient) {
 
-    protected suspend inline fun prepareGet(
-        resource: ApiResource<*>,
+    protected suspend inline fun <reified T : ApiResource<*>> prepareGet(
+        resource: T,
         builder: HttpRequestBuilder.() -> Unit = {}
     ): HttpStatement =
         client.prepareGet(resource) {
@@ -30,24 +33,24 @@ abstract class BaseRemoteService(protected val client: HttpClient) {
             builder()
         }
 
-    protected suspend inline fun preparePost(
-        resource: ApiResource<*>,
+    protected suspend inline fun <reified T : ApiResource<*>> preparePost(
+        resource: T,
         builder: HttpRequestBuilder.() -> Unit = {}
     ): HttpStatement = client.preparePost(resource) {
         resource.addRequestBodyIfExist()
         builder()
     }
 
-    protected suspend inline fun preparePut(
-        resource: ApiResource<*>,
+    protected suspend inline fun <reified T : ApiResource<*>> preparePut(
+        resource: T,
         builder: HttpRequestBuilder.() -> Unit = {}
     ): HttpStatement = client.preparePut(resource) {
         resource.addRequestBodyIfExist()
         builder()
     }
 
-    protected suspend inline fun prepareSubmitForm(
-        resource: ApiResource<*>,
+    protected suspend inline fun <reified T : ApiResource<*>> prepareSubmitForm(
+        resource: T,
         formParameters: Parameters,
         encodeInQuery: Boolean = false,
         method: HttpMethod? = null,
@@ -64,8 +67,8 @@ abstract class BaseRemoteService(protected val client: HttpClient) {
         builder()
     }
 
-    protected suspend inline fun prepareSubmitFormWithBinaryData(
-        resource: ApiResource<*>,
+    protected suspend inline fun <reified T : ApiResource<*>> prepareSubmitFormWithBinaryData(
+        resource: T,
         formParameters: List<PartData>,
         encodeInQuery: Boolean = false,
         method: HttpMethod = HttpMethod.Post,
@@ -77,8 +80,8 @@ abstract class BaseRemoteService(protected val client: HttpClient) {
         builder()
     }
 
-    protected suspend inline fun <reified ResponseModel> get(
-        resource: ApiResource<ResponseModel>,
+    protected suspend inline fun <reified T : ApiResource<ResponseModel>, reified ResponseModel> get(
+        resource: T,
         builder: HttpRequestBuilder.() -> Unit = {}
     ) = with(resource) {
         prepareGet(resource, builder)
@@ -86,8 +89,8 @@ abstract class BaseRemoteService(protected val client: HttpClient) {
             .toTypedResponse<ResponseModel>()
     }
 
-    protected suspend inline fun <reified ResponseModel> post(
-        resource: ApiResource<ResponseModel>,
+    protected suspend inline fun <reified T : ApiResource<ResponseModel>, reified ResponseModel> post(
+        resource: T,
         builder: HttpRequestBuilder.() -> Unit = {}
     ) = with(resource) {
         preparePost(resource, builder)
@@ -95,8 +98,8 @@ abstract class BaseRemoteService(protected val client: HttpClient) {
             .toTypedResponse<ResponseModel>()
     }
 
-    protected suspend inline fun <reified ResponseModel> put(
-        resource: ApiResource<ResponseModel>,
+    protected suspend inline fun <reified T : ApiResource<ResponseModel>, reified ResponseModel> put(
+        resource: T,
         builder: HttpRequestBuilder.() -> Unit = {}
     ) = with(resource) {
         preparePut(resource, builder)
@@ -104,8 +107,8 @@ abstract class BaseRemoteService(protected val client: HttpClient) {
             .toTypedResponse<ResponseModel>()
     }
 
-    protected suspend inline fun <reified ResponseModel> submitForm(
-        resource: ApiResource<ResponseModel>,
+    protected suspend inline fun <reified T : ApiResource<ResponseModel>, reified ResponseModel> submitForm(
+        resource: T,
         formParameters: Parameters,
         encodeInQuery: Boolean = false,
         method: HttpMethod? = null,
@@ -116,8 +119,8 @@ abstract class BaseRemoteService(protected val client: HttpClient) {
             .toTypedResponse<ResponseModel>()
     }
 
-    protected suspend inline fun <reified ResponseModel> submitFormWithBinaryData(
-        resource: ApiResource<ResponseModel>,
+    protected suspend inline fun <reified T : ApiResource<ResponseModel>, reified ResponseModel> submitFormWithBinaryData(
+        resource: T,
         formParameters: List<PartData>,
         encodeInQuery: Boolean = false,
         method: HttpMethod = HttpMethod.Post,
@@ -132,7 +135,12 @@ abstract class BaseRemoteService(protected val client: HttpClient) {
     companion object Helpers {
         context(builder: HttpRequestBuilder)
         protected fun ApiResource<*>.addRequestBodyIfExist() {
-            (this as? ApiResourceWithRequest<*, *>)?.run { builder.setBody(requestBody) }
+            (this as? ApiResourceWithRequest<*, *>)?.run {
+                builder.apply {
+                    header(HttpHeaders.ContentType, ContentType.Application.Json)
+                    setBody(requestBody)
+                }
+            }
         }
 
         @OptIn(InternalAPI::class)
