@@ -147,7 +147,7 @@ class UserResource : ApiResourceParent {
     data class Form(override val parent: UserResource = UserResource()) : ApiResource<String>
 }
 
-class TestService(client: HttpClient) : BaseRemoteService(client) {
+class TestService(client: HttpClient) : BaseHttpService(client) {
     suspend fun createUser(user: TestUser) = post(UserResource.Create(requestBody = user))
     suspend fun updateUser(id: Long, user: TestUser) = put(UserResource.Update(id = id, requestBody = user))
     suspend fun submitUserForm(params: io.ktor.http.Parameters) = submitForm(UserResource.Form(), params)

@@ -1,13 +1,14 @@
 # KMP Ktor Client Library
 
-This library provides a simplified and structured way to interact with REST APIs in your Kotlin Multiplatform projects, built on top of Ktor. It offers a type-safe approach to defining API endpoints and streamlines making HTTP requests.
+This library provides a simplified and structured way to interact with REST APIs in your Kotlin Multiplatform projects,
+built on top of Ktor. It offers a type-safe approach to defining API endpoints and streamlines making HTTP requests.
 
 ## Features
 
--   **Type-Safe API Endpoints**: Define your API endpoints as typed resources.
--   **Simplified HTTP Requests**: Abstract away the boilerplate of making `get`, `post`, `put` and form requests.
--   **Pre-configured Ktor Client**: Includes a factory function to create a sensible default `HttpClient`.
--   **Typed Responses**: Get back a `HttpTypedResponse` that includes the deserialized body.
+- **Type-Safe API Endpoints**: Define your API endpoints as typed resources.
+- **Simplified HTTP Requests**: Abstract away the boilerplate of making `get`, `post`, `put` and form requests.
+- **Pre-configured Ktor Client**: Includes a factory function to create a sensible default `HttpClient`.
+- **Typed Responses**: Get back a `HttpTypedResponse` that includes the deserialized body.
 
 ## Getting Started
 
@@ -21,7 +22,8 @@ dependencies {
 
 ### 2. Define API Resources
 
-Create a class for each resource root. Inside, define your specific endpoints as `data class` or `object` properties that implement `ApiResource<ResponseBody>`.
+Create a class for each resource root. Inside, define your specific endpoints as `data class` or `object` properties
+that implement `ApiResource<ResponseBody>`.
 
 For requests with a body, use the `ApiResourceWithRequest<RequestBody, ResponseBody>` interface.
 
@@ -50,15 +52,16 @@ class UserResource : ApiResourceParent {
 data class User(val id: Long, val name: String)
 ```
 
-### 3. Create a Remote Service
+### 3. Create an Http Service
 
-Create a class that inherits from `BaseRemoteService` and inject an `HttpClient`. This class will contain the functions that make the actual API calls.
+Create a class that inherits from `BaseHttpService` and inject an `HttpClient`. This class will contain the functions
+that make the actual API calls.
 
 ```kotlin
-import com.hussein.ktorClient.BaseRemoteService
+import com.hussein.ktorClient.BaseHttpService
 import io.ktor.client.HttpClient
 
-class UserRemoteService(client: HttpClient) : BaseRemoteService(client) {
+class UserHttpService(client: HttpClient) : BaseHttpService(client) {
 
     suspend fun getUsers(active: Boolean) = get(
         resource = UserResource.All(active = active)
@@ -76,7 +79,8 @@ class UserRemoteService(client: HttpClient) : BaseRemoteService(client) {
 
 ### 4. Create the HttpClient
 
-Use the `defaultJsonHttpClient` function to create a pre-configured `HttpClient`. You can customize it further if needed.
+Use the `defaultJsonHttpClient` function to create a pre-configured `HttpClient`. You can customize it further if
+needed.
 
 ```kotlin
 import com.hussein.ktorClient.defaultJsonHttpClient
@@ -95,7 +99,7 @@ val myClient = defaultJsonHttpClient(
 Now, you can instantiate your service and make API calls.
 
 ```kotlin
-val userService = UserRemoteService(myClient)
+val userService = UserHttpService(myClient)
 
 // Make a GET request
 val usersResponse = userService.getUsers(active = true)

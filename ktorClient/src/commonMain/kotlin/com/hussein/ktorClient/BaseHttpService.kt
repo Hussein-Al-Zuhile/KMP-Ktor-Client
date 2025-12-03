@@ -22,7 +22,7 @@ import io.ktor.http.Parameters
 import io.ktor.http.content.PartData
 import io.ktor.utils.io.InternalAPI
 
-abstract class BaseRemoteService(protected val client: HttpClient) {
+abstract class BaseHttpService(protected val client: HttpClient) {
 
     protected suspend inline fun <reified T : ApiResource<*>> prepareGet(
         resource: T,
