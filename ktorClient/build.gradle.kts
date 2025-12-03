@@ -49,7 +49,7 @@ kotlin {
 
             // Ktor
             implementation(libs.ktor.client.core)
-            implementation(libs.ktor.client.resources)
+            api(libs.ktor.client.resources)
             implementation(libs.ktor.client.cio)
             implementation(libs.ktor.client.logging)
             implementation(libs.ktor.serialization.kotlinx.json)
@@ -75,7 +75,7 @@ publishing {
 
 
 mavenPublishing {
-    version = "1.0.0"
+    version = "1.0.1"
     publishToMavenCentral()
 
     signAllPublications()
