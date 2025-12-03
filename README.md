@@ -16,7 +16,7 @@ Add the dependency to your module's `build.gradle.kts` file:
 
 ```groovy
 dependencies {
-    implementation("io.github.hussein-al-zuhile:kmp-ktor-client:1.0.0")
+    implementation("io.github.hussein-al-zuhile:kmp-ktor-client:1.0.2")
 }
 ```
 
