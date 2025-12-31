@@ -29,7 +29,7 @@ abstract class BaseHttpService(protected val client: HttpClient) {
         builder: HttpRequestBuilder.() -> Unit = {}
     ): HttpStatement =
         client.prepareGet(resource) {
-            resource.addRequestBodyIfExist()
+            addRequestBodyIfExist(resource)
             builder()
         }
 
@@ -37,7 +37,7 @@ abstract class BaseHttpService(protected val client: HttpClient) {
         resource: T,
         builder: HttpRequestBuilder.() -> Unit = {}
     ): HttpStatement = client.preparePost(resource) {
-        resource.addRequestBodyIfExist()
+        addRequestBodyIfExist(resource)
         builder()
     }
 
@@ -45,7 +45,7 @@ abstract class BaseHttpService(protected val client: HttpClient) {
         resource: T,
         builder: HttpRequestBuilder.() -> Unit = {}
     ): HttpStatement = client.preparePut(resource) {
-        resource.addRequestBodyIfExist()
+        addRequestBodyIfExist(resource)
         builder()
     }
 
@@ -56,7 +56,7 @@ abstract class BaseHttpService(protected val client: HttpClient) {
         method: HttpMethod? = null,
         builder: HttpRequestBuilder.() -> Unit
     ): HttpStatement = client.prepareRequest(resource) {
-        resource.addRequestBodyIfExist()
+        addRequestBodyIfExist(resource)
         if (encodeInQuery) {
             this.method = method ?: HttpMethod.Get
             url.parameters.appendAll(formParameters)
@@ -75,7 +75,7 @@ abstract class BaseHttpService(protected val client: HttpClient) {
         builder: HttpRequestBuilder.() -> Unit
     ): HttpStatement = client.prepareRequest(resource) {
         this.method = method
-        resource.addRequestBodyIfExist()
+        addRequestBodyIfExist(resource)
         setBody(MultiPartFormDataContent(formParameters))
         builder()
     }
@@ -86,7 +86,7 @@ abstract class BaseHttpService(protected val client: HttpClient) {
     ) = with(resource) {
         prepareGet(resource, builder)
             .execute()
-            .toTypedResponse<ResponseModel>()
+            .toTypedResponseByResource<ResponseModel>(resource)
     }
 
     protected suspend inline fun <reified T : ApiResource<ResponseModel>, reified ResponseModel> post(
@@ -95,7 +95,7 @@ abstract class BaseHttpService(protected val client: HttpClient) {
     ) = with(resource) {
         preparePost(resource, builder)
             .execute()
-            .toTypedResponse<ResponseModel>()
+            .toTypedResponseByResource<ResponseModel>(resource)
     }
 
     protected suspend inline fun <reified T : ApiResource<ResponseModel>, reified ResponseModel> put(
@@ -104,7 +104,7 @@ abstract class BaseHttpService(protected val client: HttpClient) {
     ) = with(resource) {
         preparePut(resource, builder)
             .execute()
-            .toTypedResponse<ResponseModel>()
+            .toTypedResponseByResource<ResponseModel>(resource)
     }
 
     protected suspend inline fun <reified T : ApiResource<ResponseModel>, reified ResponseModel> submitForm(
@@ -116,7 +116,7 @@ abstract class BaseHttpService(protected val client: HttpClient) {
     ) = with(resource) {
         prepareSubmitForm(resource, formParameters, encodeInQuery, method, builder)
             .execute()
-            .toTypedResponse<ResponseModel>()
+            .toTypedResponseByResource<ResponseModel>(resource)
     }
 
     protected suspend inline fun <reified T : ApiResource<ResponseModel>, reified ResponseModel> submitFormWithBinaryData(
@@ -128,24 +128,20 @@ abstract class BaseHttpService(protected val client: HttpClient) {
     ) = with(resource) {
         prepareSubmitFormWithBinaryData(resource, formParameters, encodeInQuery, method, builder)
             .execute()
-            .toTypedResponse<ResponseModel>()
+            .toTypedResponseByResource<ResponseModel>(resource)
     }
 
 
     companion object Helpers {
-        context(builder: HttpRequestBuilder)
-        protected fun ApiResource<*>.addRequestBodyIfExist() {
-            (this as? ApiResourceWithRequest<*, *>)?.run {
-                builder.apply {
-                    header(HttpHeaders.ContentType, ContentType.Application.Json)
-                    setBody(requestBody)
-                }
+        protected fun HttpRequestBuilder.addRequestBodyIfExist(resource: ApiResource<*>) {
+            (resource as? ApiResourceWithRequest<*, *>)?.run {
+                header(HttpHeaders.ContentType, ContentType.Application.Json)
+                setBody(resource.requestBody)
             }
         }
 
         @OptIn(InternalAPI::class)
-        context(_: ApiResource<ResponseBody>)
-        suspend inline fun <reified ResponseBody> HttpResponse.toTypedResponse(): HttpTypedResponse<ResponseBody> =
+        suspend inline fun <reified ResponseBody> HttpResponse.toTypedResponseByResource(resource: ApiResource<ResponseBody>): HttpTypedResponse<ResponseBody> =
             HttpTypedResponse(
                 call = call,
                 status = status,

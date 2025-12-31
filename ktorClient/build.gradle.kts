@@ -12,10 +12,6 @@ plugins {
 
 kotlin {
 
-    compilerOptions {
-        freeCompilerArgs.add("-Xcontext-parameters")
-    }
-
     jvm()
     androidLibrary {
         namespace = "io.github.husseinAlZuhile.kmpKtorClient"
@@ -48,12 +44,12 @@ kotlin {
             implementation(libs.kotlin.logging)
 
             // Ktor
-            implementation(libs.ktor.client.core)
+            api(libs.ktor.client.core)
             api(libs.ktor.client.resources)
-            implementation(libs.ktor.client.cio)
-            implementation(libs.ktor.client.logging)
-            implementation(libs.ktor.serialization.kotlinx.json)
-            implementation(libs.ktor.server.content.negotiation)
+            api(libs.ktor.client.cio)
+            api(libs.ktor.client.logging)
+            api(libs.ktor.serialization.kotlinx.json)
+            api(libs.ktor.server.content.negotiation)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -75,7 +71,7 @@ publishing {
 
 
 mavenPublishing {
-    version = "1.0.2"
+    version = "1.0.3"
     publishToMavenCentral()
 
     signAllPublications()
