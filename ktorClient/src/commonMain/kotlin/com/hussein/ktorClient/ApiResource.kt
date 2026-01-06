@@ -1,6 +1,7 @@
 package com.hussein.ktorClient
 
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 
 
 interface ApiResource<ResponseBody> {
@@ -9,6 +10,7 @@ interface ApiResource<ResponseBody> {
 }
 
 interface ApiResourceWithRequest<RequestBody, ResponseBody> : ApiResource<ResponseBody> {
+    @Transient
     val requestBody: RequestBody
 }
 
