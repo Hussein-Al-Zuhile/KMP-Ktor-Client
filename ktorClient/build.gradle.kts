@@ -71,7 +71,7 @@ publishing {
 
 
 mavenPublishing {
-    version = "1.0.4"
+    version = "1.2.0"
     publishToMavenCentral()
 
     signAllPublications()

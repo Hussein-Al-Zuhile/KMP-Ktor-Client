@@ -18,7 +18,6 @@ import io.ktor.resources.Resource
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.Transient
 import kotlinx.serialization.json.Json
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -131,7 +130,6 @@ class UserResource : ApiResourceParent {
     @Resource("create")
     data class Create(
         override val parent: UserResource = UserResource(),
-        @Transient override val requestBody: TestUser = TestUser(0, "")
     ) :
         ApiResourceWithRequest<TestUser, TestUser>
 
@@ -139,7 +137,6 @@ class UserResource : ApiResourceParent {
     data class Update(
         override val parent: UserResource = UserResource(),
         val id: Long,
-        @Transient override val requestBody: TestUser = TestUser(0, "")
     ) :
         ApiResourceWithRequest<TestUser, TestUser>
 
@@ -148,7 +145,7 @@ class UserResource : ApiResourceParent {
 }
 
 class TestService(client: HttpClient) : BaseHttpService(client) {
-    suspend fun createUser(user: TestUser) = post(UserResource.Create(requestBody = user))
-    suspend fun updateUser(id: Long, user: TestUser) = put(UserResource.Update(id = id, requestBody = user))
+    suspend fun createUser(user: TestUser) = post(UserResource.Create(), user)
+    suspend fun updateUser(id: Long, user: TestUser) = put(UserResource.Update(id = id), requestBody = user)
     suspend fun submitUserForm(params: io.ktor.http.Parameters) = submitForm(UserResource.Form(), params)
 }
