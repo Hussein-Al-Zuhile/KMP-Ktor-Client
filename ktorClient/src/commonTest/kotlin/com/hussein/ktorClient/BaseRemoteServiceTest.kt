@@ -23,7 +23,6 @@ import kotlinx.serialization.json.Json
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
-import kotlin.test.todo
 
 class BaseRemoteServiceTest {
 
@@ -74,8 +73,8 @@ class BaseRemoteServiceTest {
         val service = TestService(client)
         val response = service.updateUser(1, user)
 
-//        assertTrue(response.status.isSuccess())
-//        assertEquals(user, response.body)
+        assertTrue(response.status.isSuccess())
+        assertEquals(user, response.body)
     }
 
     @Test
@@ -96,8 +95,8 @@ class BaseRemoteServiceTest {
         val params = io.ktor.http.parametersOf("key", "value")
         val response = service.submitUserForm(params)
 
-//        assertTrue(response.status.isSuccess())
-//        assertEquals("Form Submitted", response.body)
+        assertTrue(response.status.isSuccess())
+        assertEquals("Form Submitted", response.body)
     }
 
     @Test
@@ -132,24 +131,24 @@ class UserResource : ApiResourceParent {
     @Resource("create")
     data class Create(
         override val parent: UserResource = UserResource(),
+        @Transient override val requestBody: TestUser = TestUser(0, "")
     ) :
-        ApiResource
+        ApiResourceWithRequest<TestUser, TestUser>
 
     @Resource("{id}")
     data class Update(
         override val parent: UserResource = UserResource(),
         val id: Long,
-    ) : ApiResource
+        @Transient override val requestBody: TestUser = TestUser(0, "")
+    ) :
+        ApiResourceWithRequest<TestUser, TestUser>
 
     @Resource("form")
-    data class Form(override val parent: UserResource = UserResource()) : ApiResource
+    data class Form(override val parent: UserResource = UserResource()) : ApiResource<String>
 }
 
 class TestService(client: HttpClient) : BaseHttpService(client) {
-    suspend fun createUser(user: TestUser) = post(object :ApiEndPoint<TestUser, TestUser, UserResource.Create> {
-        override val resource = UserResource.Create()
-        override val requestBody = user
-    })
-    suspend fun updateUser(id: Long, user: TestUser) = todo{}
-    suspend fun submitUserForm(params: io.ktor.http.Parameters) = todo {  }
+    suspend fun createUser(user: TestUser) = post(UserResource.Create(requestBody = user))
+    suspend fun updateUser(id: Long, user: TestUser) = put(UserResource.Update(id = id, requestBody = user))
+    suspend fun submitUserForm(params: io.ktor.http.Parameters) = submitForm(UserResource.Form(), params)
 }

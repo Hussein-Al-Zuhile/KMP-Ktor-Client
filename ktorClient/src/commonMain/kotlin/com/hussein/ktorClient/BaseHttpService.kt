@@ -24,39 +24,39 @@ import io.ktor.utils.io.InternalAPI
 
 abstract class BaseHttpService(protected val client: HttpClient) {
 
-    protected suspend inline fun <reified Resource : ApiResource> prepareGet(
-        endPoint: ApiEndPoint<*, *, Resource>,
+    protected suspend inline fun <reified T : ApiResource<*>> prepareGet(
+        resource: T,
         builder: HttpRequestBuilder.() -> Unit = {}
     ): HttpStatement =
-        client.prepareGet(endPoint.resource) {
-            addRequestBodyIfExist(endPoint)
+        client.prepareGet(resource) {
+            addRequestBodyIfExist(resource)
             builder()
         }
 
-    protected suspend inline fun <reified Resource : ApiResource> preparePost(
-        endPoint: ApiEndPoint<*, *, Resource>,
+    protected suspend inline fun <reified T : ApiResource<*>> preparePost(
+        resource: T,
         builder: HttpRequestBuilder.() -> Unit = {}
-    ): HttpStatement = client.preparePost(endPoint.resource) {
-        addRequestBodyIfExist(endPoint)
+    ): HttpStatement = client.preparePost(resource) {
+        addRequestBodyIfExist(resource)
         builder()
     }
 
-    protected suspend inline fun <reified Resource : ApiResource> preparePut(
-        endPoint: ApiEndPoint<*, *, Resource>,
+    protected suspend inline fun <reified T : ApiResource<*>> preparePut(
+        resource: T,
         builder: HttpRequestBuilder.() -> Unit = {}
-    ): HttpStatement = client.preparePut(endPoint.resource) {
-        addRequestBodyIfExist(endPoint)
+    ): HttpStatement = client.preparePut(resource) {
+        addRequestBodyIfExist(resource)
         builder()
     }
 
-    protected suspend inline fun <reified Resource : ApiResource> prepareSubmitForm(
-        endPoint: ApiEndPoint<*, *, Resource>,
+    protected suspend inline fun <reified T : ApiResource<*>> prepareSubmitForm(
+        resource: T,
         formParameters: Parameters,
         encodeInQuery: Boolean = false,
         method: HttpMethod? = null,
         builder: HttpRequestBuilder.() -> Unit
-    ): HttpStatement = client.prepareRequest(endPoint.resource) {
-        addRequestBodyIfExist(endPoint)
+    ): HttpStatement = client.prepareRequest(resource) {
+        addRequestBodyIfExist(resource)
         if (encodeInQuery) {
             this.method = method ?: HttpMethod.Get
             url.parameters.appendAll(formParameters)
@@ -67,79 +67,81 @@ abstract class BaseHttpService(protected val client: HttpClient) {
         builder()
     }
 
-    protected suspend inline fun <reified Resource : ApiResource> prepareSubmitFormWithBinaryData(
-        endPoint: ApiEndPoint<*, *, Resource>,
+    protected suspend inline fun <reified T : ApiResource<*>> prepareSubmitFormWithBinaryData(
+        resource: T,
         formParameters: List<PartData>,
         encodeInQuery: Boolean = false,
         method: HttpMethod = HttpMethod.Post,
         builder: HttpRequestBuilder.() -> Unit
-    ): HttpStatement = client.prepareRequest(endPoint.resource) {
+    ): HttpStatement = client.prepareRequest(resource) {
         this.method = method
-        addRequestBodyIfExist(endPoint)
+        addRequestBodyIfExist(resource)
         setBody(MultiPartFormDataContent(formParameters))
         builder()
     }
 
-    protected suspend inline fun <reified ResponseModel, reified Resource : ApiResource> get(
-        endPoint: ApiEndPoint<*, ResponseModel, Resource>,
+    protected suspend inline fun <reified T : ApiResource<ResponseModel>, reified ResponseModel> get(
+        resource: T,
         builder: HttpRequestBuilder.() -> Unit = {}
-    ) = with(endPoint) {
-        prepareGet(endPoint, builder)
+    ) = with(resource) {
+        prepareGet(resource, builder)
             .execute()
-            .toTypedResponseByResource<ResponseModel>(endPoint)
+            .toTypedResponseByResource<ResponseModel>(resource)
     }
 
-    protected suspend inline fun <reified ResponseModel, reified Resource : ApiResource> post(
-        endPoint: ApiEndPoint<*, ResponseModel, Resource>,
+    protected suspend inline fun <reified T : ApiResource<ResponseModel>, reified ResponseModel> post(
+        resource: T,
         builder: HttpRequestBuilder.() -> Unit = {}
-    ) = with(endPoint) {
-        preparePost(endPoint, builder)
+    ) = with(resource) {
+        preparePost(resource, builder)
             .execute()
-            .toTypedResponseByResource<ResponseModel>(endPoint)
+            .toTypedResponseByResource<ResponseModel>(resource)
     }
 
-    protected suspend inline fun <reified ResponseModel, reified Resource : ApiResource> put(
-        endPoint: ApiEndPoint<*, ResponseModel, Resource>,
+    protected suspend inline fun <reified T : ApiResource<ResponseModel>, reified ResponseModel> put(
+        resource: T,
         builder: HttpRequestBuilder.() -> Unit = {}
-    ) = with(endPoint) {
-        preparePut(endPoint, builder)
+    ) = with(resource) {
+        preparePut(resource, builder)
             .execute()
-            .toTypedResponseByResource<ResponseModel>(endPoint)
+            .toTypedResponseByResource<ResponseModel>(resource)
     }
 
-    protected suspend inline fun <reified ResponseModel, reified Resource : ApiResource> submitForm(
-        endPoint: ApiEndPoint<*, ResponseModel, Resource>,
+    protected suspend inline fun <reified T : ApiResource<ResponseModel>, reified ResponseModel> submitForm(
+        resource: T,
         formParameters: Parameters,
         encodeInQuery: Boolean = false,
         method: HttpMethod? = null,
         builder: HttpRequestBuilder.() -> Unit = {}
-    ) = with(endPoint) {
-        prepareSubmitForm(endPoint, formParameters, encodeInQuery, method, builder)
+    ) = with(resource) {
+        prepareSubmitForm(resource, formParameters, encodeInQuery, method, builder)
             .execute()
-            .toTypedResponseByResource<ResponseModel>(endPoint)
+            .toTypedResponseByResource<ResponseModel>(resource)
     }
 
-    protected suspend inline fun <reified ResponseModel, reified Resource : ApiResource> submitFormWithBinaryData(
-        endPoint: ApiEndPoint<*, ResponseModel, Resource>,
+    protected suspend inline fun <reified T : ApiResource<ResponseModel>, reified ResponseModel> submitFormWithBinaryData(
+        resource: T,
         formParameters: List<PartData>,
         encodeInQuery: Boolean = false,
         method: HttpMethod = HttpMethod.Post,
         builder: HttpRequestBuilder.() -> Unit = {}
-    ) = with(endPoint) {
-        prepareSubmitFormWithBinaryData(endPoint, formParameters, encodeInQuery, method, builder)
+    ) = with(resource) {
+        prepareSubmitFormWithBinaryData(resource, formParameters, encodeInQuery, method, builder)
             .execute()
-            .toTypedResponseByResource<ResponseModel>(endPoint)
+            .toTypedResponseByResource<ResponseModel>(resource)
     }
 
 
     companion object Helpers {
-        protected fun HttpRequestBuilder.addRequestBodyIfExist(apiEndPoint: ApiEndPoint<*, *, *>) {
-            header(HttpHeaders.ContentType, ContentType.Application.Json)
-            setBody(apiEndPoint.requestBody)
+        protected fun HttpRequestBuilder.addRequestBodyIfExist(resource: ApiResource<*>) {
+            (resource as? ApiResourceWithRequest<*, *>)?.run {
+                header(HttpHeaders.ContentType, ContentType.Application.Json)
+                setBody(resource.requestBody)
+            }
         }
 
         @OptIn(InternalAPI::class)
-        suspend inline fun <reified ResponseBody> HttpResponse.toTypedResponseByResource(resource: ApiEndPoint<*, ResponseBody, *>): HttpTypedResponse<ResponseBody> =
+        suspend inline fun <reified ResponseBody> HttpResponse.toTypedResponseByResource(resource: ApiResource<ResponseBody>): HttpTypedResponse<ResponseBody> =
             HttpTypedResponse(
                 call = call,
                 status = status,
