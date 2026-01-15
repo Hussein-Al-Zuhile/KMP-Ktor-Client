@@ -16,7 +16,6 @@ internal class TestResource : ApiResourceParent {
     @Resource("create")
     data class Create(
         override val parent: TestResource = TestResource(),
-        override val requestBody: String
     ) :
         ApiResourceWithRequest<String, Unit>
 }
