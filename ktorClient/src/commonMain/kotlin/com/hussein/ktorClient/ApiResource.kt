@@ -8,8 +8,9 @@ interface ApiResource<ResponseBody> {
         get() = null
 }
 
-interface ApiResourceWithRequest<RequestBody, ResponseBody> : ApiResource<ResponseBody> {
-
+interface ApiResourceWithRequest<RequestBody, ResponseBody> {
+    val parent: ApiResourceParent?
+        get() = null
 }
 
 // Helpers

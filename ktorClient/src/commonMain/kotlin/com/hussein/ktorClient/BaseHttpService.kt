@@ -195,5 +195,19 @@ abstract class BaseHttpService(protected val client: HttpClient) {
                 coroutineContext = coroutineContext,
                 rawContent = rawContent
             )
+
+        @OptIn(InternalAPI::class)
+        suspend inline fun <reified ResponseBody> HttpResponse.toTypedResponseByResource(resource: ApiResourceWithRequest<*, ResponseBody>): HttpTypedResponse<ResponseBody> =
+            HttpTypedResponse(
+                call = call,
+                status = status,
+                version = version,
+                requestTime = requestTime,
+                responseTime = responseTime,
+                headers = headers,
+                body = body(),
+                coroutineContext = coroutineContext,
+                rawContent = rawContent
+            )
     }
 }
